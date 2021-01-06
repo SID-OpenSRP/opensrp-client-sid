@@ -17,6 +17,7 @@ import org.smartregister.Context;
 import org.smartregister.adapter.SmartRegisterPaginatedAdapter;
 import org.smartregister.bidan.R;
 import org.smartregister.bidan.fragment.BaseSmartRegisterFragment;
+import org.smartregister.bidan.sync.ClientProcessor;
 import org.smartregister.bidan.utils.BidanFormUtils;
 import org.smartregister.commonregistry.AllCommonsRepository;
 import org.smartregister.commonregistry.CommonPersonObject;
@@ -29,7 +30,6 @@ import org.smartregister.enketo.listener.DisplayFormListener;
 import org.smartregister.enketo.view.fragment.DisplayFormFragment;
 import org.smartregister.provider.SmartRegisterClientsProvider;
 import org.smartregister.repository.DetailsRepository;
-import org.smartregister.bidan.sync.ClientProcessor;
 import org.smartregister.util.Log;
 import org.smartregister.view.activity.SecuredNativeSmartRegisterActivity;
 import org.smartregister.view.contract.SmartRegisterClient;
@@ -47,7 +47,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-import butterknife.Bind;
 import butterknife.ButterKnife;
 
 import static org.smartregister.util.Utils.getValue;
@@ -67,7 +66,6 @@ public class BaseRegisterActivity extends SecuredNativeSmartRegisterActivity imp
 
     private final String TAG = BaseRegisterActivity.class.getName();
     protected List<String> formNames;
-    @Bind(R.id.view_pager)
     protected OpenSRPViewPager mPager;
     protected int currentPage;
     //    private String[] formNames = new String[]{};
@@ -92,6 +90,7 @@ public class BaseRegisterActivity extends SecuredNativeSmartRegisterActivity imp
         formNames = this.buildFormNameList();
 
         // Instantiate a ViewPager and a PagerAdapter.
+        mPager = findViewById(R.id.view_pager);
         mPagerAdapter = new EnketoRegisterPagerAdapter(getSupportFragmentManager(), formNames.toArray(new String[formNames.size()]), mBaseFragment());
         mPager.setOffscreenPageLimit(formNames.size());
         mPager.setAdapter(mPagerAdapter);
