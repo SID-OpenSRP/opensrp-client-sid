@@ -521,12 +521,12 @@
         <span class="or-constraint-msg active"
             data-itext-id="/tambah_kb_oa_reviewed/nomor_telpon_hp:jr:constraintMsg" lang="Bahasa">
             Nomer teelpon
-            tidak boleh lebih dari 12 digit
+            tidak boleh lebih dari 13 digit
         </span>
         <span class="or-constraint-msg "
             data-itext-id="/tambah_kb_oa_reviewed/nomor_telpon_hp:jr:constraintMsg" lang="en">
             Contact number
-            should be no more than 12 digits
+            should be no more than 13 digits
         </span>
         <span class="question-label active"
             data-itext-id="/tambah_kb_oa_reviewed/nomor_telpon_hp:label" lang="Bahasa">Nomor
@@ -543,7 +543,7 @@
             lang="en">Mother's contact number
         </span>
         <input name="/tambah_kb_oa_reviewed/nomor_telpon_hp"
-            data-constraint=".&gt;0 and .&lt;100000000000" data-type-xml="string" type="text" />
+            data-constraint=".&gt;0 and .&lt;1000000000000" data-type-xml="string" type="text" />
     </label>
     <fieldset class="question ">
         <fieldset>
