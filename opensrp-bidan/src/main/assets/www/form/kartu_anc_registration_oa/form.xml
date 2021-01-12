@@ -1006,7 +1006,7 @@
         </fieldset>
     </fieldset>
     <label class="question or-branch pre-init non-select ">
-        <span class="or-constraint-msg active" lang="">Nomer telpon tidak boleh lebih dari 12
+        <span class="or-constraint-msg active" lang="">Nomer telpon tidak boleh lebih dari 13
             digit
         </span>
         <span class="question-label active" data-itext-id="/Register_ANC/nomor_telpon_hp:label"
@@ -1014,7 +1014,7 @@
         </span>
         <span class="required">*</span>
         <span class="or-hint active" lang="">Nomor telpon/Hp yang dimiliki oleh Ibu</span>
-        <input name="/Register_ANC/nomor_telpon_hp" data-constraint=".&gt;0 and .&lt;100000000000"
+        <input name="/Register_ANC/nomor_telpon_hp" data-constraint=".&gt;0 and .&lt;1000000000000"
             data-relevant=" /Register_ANC/nomortelpon  = 'Ya'" data-type-xml="string"
             required="required" type="text" />
     </label>

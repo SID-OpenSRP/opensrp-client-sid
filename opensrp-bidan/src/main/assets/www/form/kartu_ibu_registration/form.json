@@ -1047,10 +1047,10 @@
       },
       "bind": {
         "jr:constraintMsg": {
-          "Bahasa": "Nomer teelpon tidak boleh lebih dari 12 digit",
-          "English": "Contact number should be no more than 12 digits"
+          "Bahasa": "Nomer teelpon tidak boleh lebih dari 13 digit",
+          "English": "Contact number should be no more than 13 digits"
         },
-        "constraint": ".>0 and .<100000000000"
+        "constraint": ".>0 and .<1000000000000"
       },
       "label": {
         "Bahasa": "Nomor Telpon/Hp",
