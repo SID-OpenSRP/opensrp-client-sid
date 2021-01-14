@@ -278,7 +278,7 @@ public class DetailANCActivity extends Activity {
         if (isKeteranganFound) {
             keteranganK1K4 = ancClient.getDetails().get("KeteranganK1k4Who").equals("Ya") ? String.format(": %s",getResources().getString(R.string.standart)) : String.format(": %s",getResources().getString(R.string.non_standart));
         } else {
-            keteranganK1K4 = "-";
+            keteranganK1K4 = ": -";
         }
         ((TextView) findViewById(R.id.txt_keterangan_k1k4)).setText(keteranganK1K4);
         ((TextView) findViewById(R.id.txt_tanggalHPHT)).setText(getStrValue("tanggalHPHT"));
