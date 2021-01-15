@@ -19,6 +19,7 @@ import org.smartregister.commonregistry.CommonPersonObjectClient;
 import org.smartregister.repository.DetailsRepository;
 import org.smartregister.view.customcontrols.CustomFontTextView;
 
+import java.util.Collections;
 import java.util.List;
 
 import static android.view.View.GONE;
@@ -446,6 +447,15 @@ public class DetailANCActivity extends Activity {
         });
 
         final List<JSONObject> ancEvents = EventRepository.getANCByBaseEntityId(ancClient.entityId());
+        Collections.sort(ancEvents, (u1, u2) -> {
+            try {
+                return u1.getString("ancDate").replace("-", "")
+                        .compareTo(u2.getString("ancDate").replace("-", ""));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return 0;
+        });
 
         final LinearLayout history_button = findViewById(R.id.visit_history_button);
         int i = 1;
