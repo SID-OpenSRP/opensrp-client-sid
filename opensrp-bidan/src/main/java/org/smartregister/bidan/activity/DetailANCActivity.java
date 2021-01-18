@@ -19,6 +19,7 @@ import org.smartregister.commonregistry.CommonPersonObjectClient;
 import org.smartregister.repository.DetailsRepository;
 import org.smartregister.view.customcontrols.CustomFontTextView;
 
+import java.util.Collections;
 import java.util.List;
 
 import static android.view.View.GONE;
@@ -272,7 +273,15 @@ public class DetailANCActivity extends Activity {
         //   dob.setText(getResources().getString(R.string.dob)+ (ancClient.getDetails().get("tanggalLahir") != null ? ancClient.getDetails().get("tanggalLahir") : "-"));
         ((TextView) findViewById(R.id.tv_contact_phone_number)).setText(String.format("No HP: %s", ancClient.getDetails().get("NomorTelponHp") != null ? ancClient.getDetails().get("NomorTelponHp") : "-"));
 
-        ((TextView) findViewById(R.id.txt_keterangan_k1k4)).setText(getStrValue("KeteranganK1k4Who")=="Ya"?String.format(": %s",getResources().getString(R.string.standart)):String.format(": %s",getResources().getString(R.string.non_standart)));
+        boolean isKeteranganFound;
+        isKeteranganFound = ancClient.getDetails().containsKey("KeteranganK1k4Who");
+        String keteranganK1K4;
+        if (isKeteranganFound) {
+            keteranganK1K4 = ancClient.getDetails().get("KeteranganK1k4Who").equals("Ya") ? String.format(": %s",getResources().getString(R.string.standart)) : String.format(": %s",getResources().getString(R.string.non_standart));
+        } else {
+            keteranganK1K4 = ": -";
+        }
+        ((TextView) findViewById(R.id.txt_keterangan_k1k4)).setText(keteranganK1K4);
         ((TextView) findViewById(R.id.txt_tanggalHPHT)).setText(getStrValue("tanggalHPHT"));
         ((TextView) findViewById(R.id.txt_usiaKlinis_anc)).setText(getStrValue("usiaKlinis"));
         ((TextView) findViewById(R.id.txt_trimesterKe)).setText(getStrValue("trimesterKe"));
@@ -290,8 +299,16 @@ public class DetailANCActivity extends Activity {
         ((TextView) findViewById(R.id.txt_persentasiJanin)).setText(getStrValue("persentasiJanin"));
         ((TextView) findViewById(R.id.txt_jumlahJanin)).setText(getStrValue("jumlahJanin"));
 
+        boolean isPelayananFeFound;
+        isPelayananFeFound = ancClient.getDetails().containsKey("pelayananFe");
+        String pelayananFe;
+        if (isPelayananFeFound) {
+            pelayananFe = ": " + ancClient.getDetails().get("pelayananFe");
+        } else {
+            pelayananFe = ": -";
+        }
         ((TextView) findViewById(R.id.txt_statusImunisasiTT)).setText(getStrValue("statusImunisasitt"));
-        ((TextView) findViewById(R.id.txt_pelayananfe)).setText(getStrValue("pelayananFe"));
+        ((TextView) findViewById(R.id.txt_pelayananfe)).setText(pelayananFe);
         ((TextView) findViewById(R.id.txt_komplikasiKehamilan)).setText(getStrValue("komplikasidalamKehamilan"));
         ((TextView) findViewById(R.id.txt_integrasiProgrampmtctvct)).setText(getStrValue("integrasiProgrampmtctvct"));
         ((TextView) findViewById(R.id.txt_integrasiProgrampmtctPeriksaDarah)).setText(getStrValue("integrasiProgrampmtctPeriksaDarah"));
@@ -430,6 +447,15 @@ public class DetailANCActivity extends Activity {
         });
 
         final List<JSONObject> ancEvents = EventRepository.getANCByBaseEntityId(ancClient.entityId());
+        Collections.sort(ancEvents, (u1, u2) -> {
+            try {
+                return u1.getString("ancDate").replace("-", "")
+                        .compareTo(u2.getString("ancDate").replace("-", ""));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return 0;
+        });
 
         final LinearLayout history_button = findViewById(R.id.visit_history_button);
         int i = 1;
@@ -444,6 +470,7 @@ public class DetailANCActivity extends Activity {
                     history_view.setVisibility(VISIBLE);
                     try {
                         String date = ancEvent.getString("ancDate");
+
                         ((TextView)history_view.findViewById(R.id.txt_ancDate)).setText(date);
                         ((TextView)history_view.findViewById(R.id.txt_ancKe)).setText(ancEvent.has("ancKe")?ancEvent.getString("ancKe"):"-");
                         ((TextView)history_view.findViewById(R.id.txt_keterangan_k1k4)).setText(ancEvent.has("ancKe")?ancEvent.getString("KeteranganK1k4Who"):"-");
