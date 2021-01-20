@@ -31,9 +31,7 @@ import com.bugsnag.android.Bugsnag;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.smartregister.AllConstants;
 import org.smartregister.Context;
-import org.smartregister.DristhiConfiguration;
 import org.smartregister.bidan.BuildConfig;
 import org.smartregister.bidan.R;
 import org.smartregister.bidan.application.BidanApplication;
@@ -43,21 +41,15 @@ import org.smartregister.domain.jsonmapping.LoginResponseData;
 import org.smartregister.domain.jsonmapping.util.TeamLocation;
 import org.smartregister.event.Listener;
 import org.smartregister.repository.AllSharedPreferences;
-import org.smartregister.repository.Repository;
 import org.smartregister.sync.DrishtiSyncScheduler;
 import org.smartregister.util.AssetHandler;
 import org.smartregister.util.Utils;
 import org.smartregister.view.BackgroundAction;
 import org.smartregister.view.LockingBackgroundTask;
 import org.smartregister.view.ProgressIndicator;
-import org.smartregister.view.activity.DrishtiApplication;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.security.interfaces.RSAPrivateKey;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -632,7 +624,8 @@ public class LoginActivity extends AppCompatActivity {
 
     private void hideKeyboard() {
         InputMethodManager inputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-        inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), HIDE_NOT_ALWAYS);
+        if (getCurrentFocus() != null)
+            inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), HIDE_NOT_ALWAYS);
     }
 
     private void showErrorDialog(String message) {
