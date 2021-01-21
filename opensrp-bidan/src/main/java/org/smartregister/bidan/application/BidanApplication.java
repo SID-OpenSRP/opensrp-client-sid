@@ -4,7 +4,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.util.Log;
 
-import com.crashlytics.android.Crashlytics;
+
 import com.github.johnkil.print.PrintConfig;
 
 import org.smartregister.Context;
@@ -24,7 +24,7 @@ import org.smartregister.view.activity.DrishtiApplication;
 
 import java.util.Locale;
 
-import io.fabric.sdk.android.Fabric;
+
 
 import static org.smartregister.util.Log.logError;
 import static org.smartregister.util.Log.logInfo;
@@ -124,7 +124,6 @@ public class BidanApplication extends DrishtiApplication {
 
         applyUserLanguagePreference();
         cleanUpSyncState();
-        Fabric.with(this, new Crashlytics());
         isFRSupported = FacialRecognitionLibrary.init(context, getRepository());
     }
 
