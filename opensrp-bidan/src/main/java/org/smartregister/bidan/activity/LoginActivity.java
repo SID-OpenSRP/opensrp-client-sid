@@ -27,7 +27,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.bugsnag.android.Bugsnag;
+
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -94,8 +94,6 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        Bugsnag.init(this);
 
         logVerbose("Initializing ...");
         try {
@@ -416,10 +414,7 @@ public class LoginActivity extends AppCompatActivity {
         final String userName = userNameEditText.getText().toString();
         final String password = passwordEditText.getText().toString();
 
-        Bugsnag.setUserName(userName);
 
-        Bugsnag.leaveBreadcrumb("userName: " + userName);
-        Bugsnag.leaveBreadcrumb("password: " + password);
 
         if (!TextUtils.isEmpty(userName) && !TextUtils.isEmpty(password)) {
             if (localLogin) {
@@ -497,40 +492,32 @@ public class LoginActivity extends AppCompatActivity {
         try {
             KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
             keyStore.load(null);
-            if (keyStore == null) {
-                Bugsnag.leaveBreadcrumb("keystore null");
-            }
+
             KeyStore.PrivateKeyEntry privateKeyEntry = getUserKeyPair(keyStore, userName);
-            if (privateKeyEntry == null) {
-                Bugsnag.leaveBreadcrumb("privateKeyEntry null");
-            }
+
 
             String encryptedPassword = allSharedPreferences.
                     fetchEncryptedPassword(userName);
             String decryptedPassword = decryptString(privateKeyEntry, encryptedPassword);
-            if (!password.equals(decryptedPassword)) {
-                Bugsnag.leaveBreadcrumb("password not equal: " + password + " : " + decryptedPassword);
-            }
+
 
             String groupId = getGroupId(allSharedPreferences, userName, privateKeyEntry);
-            if (groupId == null) {
-                Bugsnag.leaveBreadcrumb("groupId null");
-            }
+
 
             boolean isValidGroupId = isValidGroupId(groupId);
-            Bugsnag.leaveBreadcrumb("isValidGroupId: " + isValidGroupId);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         boolean fetchForceRemoteLogin = allSharedPreferences.fetchForceRemoteLogin();
-        Bugsnag.leaveBreadcrumb("fetchForceRemoteLogin: " + fetchForceRemoteLogin);
+
 
         if (getOpenSRPContext().userService().isUserInValidGroup(userName, password)) {
             localLoginWith(userName, password);
 
         } else {
-            Bugsnag.notify(new Exception(getString(org.smartregister.R.string.login_failed_dialog_message)));
+
 //            showErrorDialog(getString(org.smartregister.R.string.login_failed_dialog_message));
 //            view.setClickable(true);
             remoteLogin(view, userName, password);
