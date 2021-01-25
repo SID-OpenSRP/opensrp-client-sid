@@ -42,12 +42,12 @@ jacoco {
 
 android {
 
-    compileSdkVersion 27
+    compileSdkVersion 28
 
     defaultConfig {
         applicationId "org.smartregister.bidan"
-        minSdkVersion 18
-        targetSdkVersion 27
+        minSdkVersion 21
+        targetSdkVersion 28
         versionCode 8
         versionName "8.4.7"
         multiDexEnabled true
@@ -175,6 +175,11 @@ dependencies {
     testImplementation('com.squareup:fest-android:1.0.8') { exclude module: 'support-v4' }
     testImplementation 'org.robolectric:robolectric:4.3'
     testImplementation 'org.robolectric:shadows-multidex:3.8'
+
+    def appCenterSdkVersion = '4.1.0'
+    implementation "com.microsoft.appcenter:appcenter-analytics:${appCenterSdkVersion}"
+    implementation "com.microsoft.appcenter:appcenter-crashes:${appCenterSdkVersion}"
+
     // PowerMock
     def powerMockVersion = '1.7.3'
     testImplementation "org.powermock:powermock-module-junit4:$powerMockVersion"
