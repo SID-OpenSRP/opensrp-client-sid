@@ -157,8 +157,10 @@ public class ClientProcessor {
                                     .rawQuery("SELECT * FROM ec_pnc WHERE anc_id IN ("+ inQuestionMarks +")", ancList.toArray(new String[ancList.size()]));
                             // if yes, then skip both removePncData and removeAncData
                             if (temp.getCount() > 0) {
+                                if(!temp.isClosed()) temp.close();
                                 continue;
                             }
+                            if(!temp.isClosed()) temp.close();
                         }
                     }
                     // END: find existing anc_id in ec_pnc (Dokumentasi Persalinan)
@@ -569,10 +571,14 @@ public class ClientProcessor {
                         JSONObject relationshipsObject = jsonDocument.has("relationships") ? jsonDocument
                                 .getJSONObject("relationships") : null;
                         if (relationshipsObject != null) {
-                            JSONArray relationshipsArray = relationshipsObject.getJSONArray(fieldName);
-                            if (relationshipsArray != null && relationshipsArray.length() > 0) {
-                                List<String> relationalIds = getValues(relationshipsArray);
-                                contentValues.put(columnName, relationalIds.get(0));
+                            if(relationshipsObject.has(fieldName)){
+                                JSONArray relationshipsArray = relationshipsObject.getJSONArray(fieldName);
+                                if (relationshipsArray != null && relationshipsArray.length() > 0) {
+                                    List<String> relationalIds = getValues(relationshipsArray);
+                                    contentValues.put(columnName, relationalIds.get(0));
+                                }
+                            } else {
+                                Log.e(TAG, "processCaseModel: THEY DON'T HAVE " + baseEntityId);
                             }
                         }
                         Log.d(TAG, "processCaseModel: special handler for relationalid");
@@ -861,8 +867,8 @@ public class ClientProcessor {
      * @param timestamp
      */
     private void saveClientDetails(String baseEntityId, String key, String value, Long timestamp) {
-        Log.d(TAG, "saveClientDetails: key="+key);
-        Log.d(TAG, "saveClientDetails: value="+value);
+//        Log.d(TAG, "saveClientDetails: key="+key);
+//        Log.d(TAG, "saveClientDetails: value="+value);
         DetailsRepository detailsRepository = org.smartregister.CoreLibrary.getInstance().context().
                 detailsRepository();
         detailsRepository.add(baseEntityId, key, value, timestamp);
@@ -966,7 +972,16 @@ public class ClientProcessor {
      **/
     public Long executeInsertStatement(ContentValues values, String tableName) {
         CommonRepository cr = org.smartregister.CoreLibrary.getInstance().context().commonrepository(tableName);
-        Long id = cr.executeInsertStatement(values, tableName);
+        Long id;
+        if(tableName.equalsIgnoreCase("ec_anak")){
+            if (values.valueSet().size() >= 7) {
+                id = cr.executeInsertStatement(values, tableName);
+            } else {
+                id = 0L;
+            }
+        } else {
+            id = cr.executeInsertStatement(values, tableName);
+        }
         return id;
     }
 
