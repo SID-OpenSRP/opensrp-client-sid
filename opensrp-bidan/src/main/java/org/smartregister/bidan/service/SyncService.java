@@ -53,6 +53,8 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
@@ -76,6 +78,7 @@ public class SyncService extends Service {
     private List<Observable<?>> observables;
     private Long startSync = 0L;
     private Long endSync = 0L;
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     @Override
     public void onCreate() {
@@ -107,6 +110,7 @@ public class SyncService extends Service {
     @Override
     public void onDestroy() {
         mHandlerThread.quit();
+        compositeDisposable.dispose();
     }
 
     protected void handleSync() {
@@ -253,66 +257,50 @@ public class SyncService extends Service {
             return;
         }
 
-        Observable.just(locations)
+        Disposable disposable = Observable.just(locations)
                 .observeOn(AndroidSchedulers.from(mHandlerThread.getLooper()))
                 .subscribeOn(Schedulers.io())
-                .flatMap(new Function<String, ObservableSource<?>>() {
-                    @Override
-                    public ObservableSource<?> apply(@NonNull String locations) throws Exception {
-
-                        JSONObject jsonObject = fetchRetry(locations, 0);
-                        if (jsonObject == null) {
+                .flatMap(loc -> {
+                    JSONObject jsonObject = fetchRetry(loc, 0);
+                    if (jsonObject == null) {
+                        return Observable.just(FetchStatus.fetchedFailed);
+                    } else {
+                        final String NO_OF_EVENTS = "no_of_events";
+                        int eCount = jsonObject.has(NO_OF_EVENTS) ? jsonObject.getInt(NO_OF_EVENTS) : 0;
+                        if (eCount < 0) {
                             return Observable.just(FetchStatus.fetchedFailed);
+                        } else if (eCount == 0) {
+                            return Observable.just(FetchStatus.fetched);
                         } else {
-                            final String NO_OF_EVENTS = "no_of_events";
-                            int eCount = jsonObject.has(NO_OF_EVENTS) ? jsonObject.getInt(NO_OF_EVENTS) : 0;
-                            if (eCount < 0) {
-                                return Observable.just(FetchStatus.fetchedFailed);
-                            } else if (eCount == 0) {
-                                return Observable.just(FetchStatus.fetched);
-                            } else {
-                                Pair<Long, Long> serverVersionPair = getMinMaxServerVersions(jsonObject);
-                                long lastServerVersion = serverVersionPair.second - 1;
-                                if (eCount < EVENT_PULL_LIMIT) {
-                                    lastServerVersion = serverVersionPair.second;
-                                }
-
-                                ecUpdater.updateLastSyncTimeStamp(lastServerVersion);
-                                return Observable.just(new ResponseParcel(jsonObject, serverVersionPair));
+                            Pair<Long, Long> serverVersionPair = getMinMaxServerVersions(jsonObject);
+                            long lastServerVersion = serverVersionPair.second - 1;
+                            if (eCount < EVENT_PULL_LIMIT) {
+                                lastServerVersion = serverVersionPair.second;
                             }
+
+                            ecUpdater.updateLastSyncTimeStamp(lastServerVersion);
+                            return Observable.just(new ResponseParcel(jsonObject, serverVersionPair));
                         }
                     }
                 })
-                .subscribe(new Consumer<Object>() {
-                    @SuppressWarnings("unchecked")
-                    @Override
-                    public void accept(Object o) throws Exception {
-                        if (o != null) {
-                            if (o instanceof ResponseParcel) {
-                                ResponseParcel responseParcel = (ResponseParcel) o;
-                                saveResponseParcel(responseParcel);
-                            } else if (o instanceof FetchStatus) {
-                                final FetchStatus fetchStatus = (FetchStatus) o;
-                                if (observables != null && !observables.isEmpty()) {
-                                    Observable.zip(observables, new Function<Object[], Object>() {
-                                        @Override
-                                        public Object apply(@NonNull Object[] objects) throws Exception {
-                                            return FetchStatus.fetched;
-                                        }
-                                    }).subscribe(new Consumer<Object>() {
-                                        @Override
-                                        public void accept(Object o) throws Exception {
-                                            complete(fetchStatus);
-                                        }
-                                    });
-                                } else {
-                                    complete(fetchStatus);
-                                }
-
+                .subscribe(o -> {
+                    if (o != null) {
+                        if (o instanceof ResponseParcel) {
+                            ResponseParcel responseParcel = (ResponseParcel) o;
+                            saveResponseParcel(responseParcel);
+                        } else if (o instanceof FetchStatus) {
+                            final FetchStatus fetchStatus = (FetchStatus) o;
+                            if (observables != null && !observables.isEmpty()) {
+                                Disposable ds = Observable.zip(observables, (Function<Object[], Object>) objects -> FetchStatus.fetched).subscribe(o1 -> complete(fetchStatus));
+                                compositeDisposable.add(ds);
+                            } else {
+                                complete(fetchStatus);
                             }
+
                         }
                     }
                 });
+        compositeDisposable.add(disposable);
     }
 
     private void pullPhotoFromServer(){
@@ -361,8 +349,6 @@ public class SyncService extends Service {
                 }
 
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -397,15 +383,13 @@ public class SyncService extends Service {
                             }
                         });
 
-        observable.subscribe(new Consumer<FetchStatus>() {
-            @Override
-            public void accept(FetchStatus fetchStatus) throws Exception {
-                sendSyncStatusBroadcastMessage(FetchStatus.fetched);
-                observables.remove(observable);
-            }
+        Disposable subscribe = observable.subscribe(fetchStatus -> {
+            sendSyncStatusBroadcastMessage(FetchStatus.fetched);
+            observables.remove(observable);
         });
 
         observables.add(observable);
+        compositeDisposable.add(subscribe);
 
         pullECFromServer();
 
