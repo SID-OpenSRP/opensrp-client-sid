@@ -83,6 +83,7 @@ public class BidanHomeActivity extends SecuredActivity implements SyncStatusBroa
     private TextView anakRegisterClientCountView;
     private TextView kohortKbCountView;
     private SharedPreferences preferences;
+    protected final int MENU_LOGOUT = 722;
     private Listener<String> onFormSubmittedListener = new Listener<String>() {
         @Override
         public void onEvent(String instanceId) {
@@ -329,7 +330,7 @@ public class BidanHomeActivity extends SecuredActivity implements SyncStatusBroa
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
-        attachLogoutMenuItem(menu);
+        menu.add(0, MENU_LOGOUT, menu.size(), R.string.logout_text);
         return true;
     }
 
@@ -375,6 +376,12 @@ public class BidanHomeActivity extends SecuredActivity implements SyncStatusBroa
                 Toast.makeText(this, String.format("%s current user = %s", context().getStringResource(R.string.app_name), anmID), LENGTH_SHORT).show();
 
                 Tools.getDbRecord(context());
+                return true;
+            case MENU_LOGOUT:
+                BidanApplication.getInstance().context().userService().logout();
+                Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getApplicationContext().startActivity(intent);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
