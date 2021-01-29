@@ -380,6 +380,7 @@ public class BidanHomeActivity extends SecuredActivity implements SyncStatusBroa
             case MENU_LOGOUT:
                 BidanApplication.getInstance().context().userService().logout();
                 getSharedPreferences("preferences", android.content.Context.MODE_PRIVATE).edit().clear().apply();
+                getDefaultSharedPreferences(this).edit().clear().apply();
                 Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 getApplicationContext().startActivity(intent);
