@@ -297,7 +297,6 @@ public class LoginActivity extends AppCompatActivity {
         if (BuildConfig.DEBUG) {
             if (getOpenSRPContext().userService().hasARegisteredUser()) {
                 userNameEditText.setText(context.allSharedPreferences().fetchRegisteredANM());
-                userNameEditText.setEnabled(false);
             }
         }
     }
