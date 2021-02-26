@@ -12,6 +12,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.StrictMode;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
@@ -42,6 +43,7 @@ import org.smartregister.cursoradapter.SmartRegisterQueryBuilder;
 import org.smartregister.domain.FetchStatus;
 import org.smartregister.enketo.view.fragment.DisplayFormFragment;
 import org.smartregister.event.Listener;
+import org.smartregister.repository.AllSharedPreferences;
 import org.smartregister.service.PendingFormSubmissionService;
 import org.smartregister.bidan.sync.ClientProcessor;
 import org.smartregister.util.AssetHandler;
@@ -51,6 +53,8 @@ import org.smartregister.view.contract.HomeContext;
 import org.smartregister.view.controller.NativeAfterANMDetailsFetchListener;
 import org.smartregister.view.controller.NativeUpdateANMDetailsTask;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -61,6 +65,7 @@ import static android.widget.Toast.LENGTH_SHORT;
 import static java.lang.String.valueOf;
 import static org.smartregister.event.Event.ACTION_HANDLED;
 import static org.smartregister.event.Event.FORM_SUBMITTED;
+import static org.smartregister.util.Log.logInfo;
 
 //import java.text.SimpleDateFormat;
 //import java.util.Date;
@@ -83,6 +88,7 @@ public class BidanHomeActivity extends SecuredActivity implements SyncStatusBroa
     private TextView anakRegisterClientCountView;
     private TextView kohortKbCountView;
     private SharedPreferences preferences;
+    protected final int MENU_LOGOUT = 722;
     private Listener<String> onFormSubmittedListener = new Listener<String>() {
         @Override
         public void onEvent(String instanceId) {
@@ -329,7 +335,7 @@ public class BidanHomeActivity extends SecuredActivity implements SyncStatusBroa
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
-        attachLogoutMenuItem(menu);
+        menu.add(0, MENU_LOGOUT, menu.size(), R.string.logout_text);
         return true;
     }
 
@@ -375,6 +381,32 @@ public class BidanHomeActivity extends SecuredActivity implements SyncStatusBroa
                 Toast.makeText(this, String.format("%s current user = %s", context().getStringResource(R.string.app_name), anmID), LENGTH_SHORT).show();
 
                 Tools.getDbRecord(context());
+                return true;
+            case MENU_LOGOUT:
+                BidanApplication.getInstance().context().userService().logout();
+                getSharedPreferences("preferences", android.content.Context.MODE_PRIVATE).edit().clear().apply();
+                SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+                String currentUrlSetting = pref.getString("DRISHTI_BASE_URL", "-");
+                pref.edit().clear().apply();
+                pref.edit().putString("DRISHTI_BASE_URL", currentUrlSetting).apply();
+                AllSharedPreferences allSharedPreferences = new AllSharedPreferences(pref);
+                URL url = null;
+                try {
+                    url = new URL(currentUrlSetting);
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+
+                String base = url.getProtocol() + "://" + url.getHost();
+                int port = url.getPort();
+
+                logInfo("Base URL: " + base);
+                logInfo("Port: " + port);
+                allSharedPreferences.saveHost(base);
+                allSharedPreferences.savePort(port);
+                Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getApplicationContext().startActivity(intent);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

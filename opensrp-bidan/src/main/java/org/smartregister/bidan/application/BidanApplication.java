@@ -4,8 +4,11 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.util.Log;
 
-import com.crashlytics.android.Crashlytics;
+
 import com.github.johnkil.print.PrintConfig;
+import com.microsoft.appcenter.AppCenter;
+import com.microsoft.appcenter.analytics.Analytics;
+import com.microsoft.appcenter.crashes.Crashes;
 
 import org.smartregister.Context;
 import org.smartregister.CoreLibrary;
@@ -24,8 +27,8 @@ import org.smartregister.view.activity.DrishtiApplication;
 
 import java.util.Locale;
 
-import io.fabric.sdk.android.Fabric;
 
+import static android.util.Log.VERBOSE;
 import static org.smartregister.util.Log.logError;
 import static org.smartregister.util.Log.logInfo;
 
@@ -109,7 +112,7 @@ public class BidanApplication extends DrishtiApplication {
     @Override
     public void onCreate() {
         PrintConfig.initDefault(getAssets(), "fonts/material-icon-font.ttf");
-
+        initAppCenter();
         mInstance = this;
 
         context = Context.getInstance();
@@ -124,8 +127,16 @@ public class BidanApplication extends DrishtiApplication {
 
         applyUserLanguagePreference();
         cleanUpSyncState();
-        Fabric.with(this, new Crashlytics());
         isFRSupported = FacialRecognitionLibrary.init(context, getRepository());
+    }
+
+    private void initAppCenter() {
+        AppCenter.start(this, "98c1b96d-3b2f-4812-a9ce-b46dd9e6be84",
+                Analytics.class, Crashes.class);
+        Log.d(TAG, "initAppCenter: Check enable " + Crashes.isEnabled().get());
+        if (!Crashes.isEnabled().get()) Crashes.setEnabled(true);
+        AppCenter.setLogLevel(VERBOSE);
+        Crashes.notifyUserConfirmation(Crashes.ALWAYS_SEND);
     }
 
     @Override

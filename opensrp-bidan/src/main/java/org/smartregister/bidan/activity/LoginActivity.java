@@ -4,11 +4,13 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
@@ -27,13 +29,11 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.bugsnag.android.Bugsnag;
+
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.smartregister.AllConstants;
 import org.smartregister.Context;
-import org.smartregister.DristhiConfiguration;
 import org.smartregister.bidan.BuildConfig;
 import org.smartregister.bidan.R;
 import org.smartregister.bidan.application.BidanApplication;
@@ -43,21 +43,17 @@ import org.smartregister.domain.jsonmapping.LoginResponseData;
 import org.smartregister.domain.jsonmapping.util.TeamLocation;
 import org.smartregister.event.Listener;
 import org.smartregister.repository.AllSharedPreferences;
-import org.smartregister.repository.Repository;
 import org.smartregister.sync.DrishtiSyncScheduler;
 import org.smartregister.util.AssetHandler;
 import org.smartregister.util.Utils;
 import org.smartregister.view.BackgroundAction;
 import org.smartregister.view.LockingBackgroundTask;
 import org.smartregister.view.ProgressIndicator;
-import org.smartregister.view.activity.DrishtiApplication;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.security.interfaces.RSAPrivateKey;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -85,6 +81,7 @@ import static org.smartregister.domain.LoginResponse.SUCCESS_WITH_EMPTY_RESPONSE
 import static org.smartregister.domain.LoginResponse.UNAUTHORIZED;
 import static org.smartregister.domain.LoginResponse.UNKNOWN_RESPONSE;
 import static org.smartregister.util.Log.logError;
+import static org.smartregister.util.Log.logInfo;
 import static org.smartregister.util.Log.logVerbose;
 
 public class LoginActivity extends AppCompatActivity {
@@ -102,8 +99,6 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        Bugsnag.init(this);
 
         logVerbose("Initializing ...");
         try {
@@ -148,137 +143,6 @@ public class LoginActivity extends AppCompatActivity {
 
     }
 
-    private void debugApp() {
-        String uname = "demo_user3", pwd = "Demo@123";
-        Log.e(TAG, "debugApp: uname="+uname+", pwd="+pwd);
-
-        LayoutInflater layoutInflater = getLayoutInflater();
-        View view = layoutInflater.inflate(R.layout.login, null);
-        if (context.userService().hasARegisteredUser()){
-            localLoginWith(uname, pwd);
-            //localLogin(view, uname, pwd);
-        } else {
-            remoteLogin(view, uname, pwd);
-        }
-    }
-
-    private void remoteLoginDebug(final View view, final String userName, final String password) {
-        tryRemoteLoginDebug(userName, password, new Listener<LoginResponse>() {
-            public void onEvent(LoginResponse loginResponse) {
-//                ErrorReportingFacade.setUsername("", userName);
-//                FlurryAgent.setUserId(userName);
-                if (loginResponse == SUCCESS) {
-                    Utils.writePreference(BidanApplication.getInstance().getApplicationContext(), "LOCAL_DEBUG", "True");
-                    remoteLoginWith(userName, password, loginResponse.payload());
-                    getOpenSRPContext().allSharedPreferences().saveForceRemoteLogin(false);
-
-                } else {
-                    if (loginResponse == null) {
-                        showErrorDialog("Login failed. Unknown reason. Try Again");
-                    } else {
-                        Log.e(TAG, "onEvent: "+ loginResponse.message() );
-                        if (loginResponse == NO_INTERNET_CONNECTIVITY) {
-                            showErrorDialog(getResources().getString(R.string.no_internet_connectivity));
-                        } else if (loginResponse == UNKNOWN_RESPONSE) {
-                            showErrorDialog(getResources().getString(R.string.unknown_response));
-                        } else if (loginResponse == UNAUTHORIZED) {
-                            showErrorDialog(getResources().getString(R.string.unauthorized));
-                        }
-//                        showErrorDialog(loginResponse.message());
-                    }
-                    view.setClickable(true);
-                }
-            }
-        });
-    }
-
-    private void tryRemoteLoginDebug(final String userName, final String password, final Listener<LoginResponse> afterLoginCheck) {
-        LockingBackgroundTask task = new LockingBackgroundTask(new ProgressIndicator() {
-            @Override
-            public void setVisible() {
-                progressDialog.show();
-            }
-
-            @Override
-            public void setInvisible() {
-                progressDialog.dismiss();
-            }
-        });
-
-
-
-        task.doActionInBackground(new BackgroundAction<LoginResponse>() {
-            public LoginResponse actionToDoInBackgroundThread() {
-                String responseString = AssetHandler.readFileFromAssetsFolder("dummy_loc.json", context.applicationContext());
-                Log.e(TAG, "actionToDoInBackgroundThread: responseString="+responseString);
-                LoginResponseData responseData = AssetHandler.jsonStringToJava(responseString, LoginResponseData.class);
-                LoginResponse result = retrieveResponse(responseData);
-                return result;
-            }
-
-            public void postExecuteInUIThread(LoginResponse result) {
-                afterLoginCheck.onEvent(result);
-            }
-        });
-    }
-
-    private LoginResponse retrieveResponse(LoginResponseData responseData) {
-        Log.d(TAG, "retrieveResponse: responseData="+responseData);
-        Log.d(TAG, "retrieveResponse: responseData.team="+responseData.team);
-        Log.d(TAG, "retrieveResponse: responseData.user="+responseData.user);
-        Log.d(TAG, "retrieveResponse: responseData.locations="+responseData.locations);
-        Log.d(TAG, "retrieveResponse: responseData.time="+responseData.time);
-        if (responseData == null) {
-            logError("Empty Response using " + SUCCESS_WITH_EMPTY_RESPONSE.name());
-            return SUCCESS_WITH_EMPTY_RESPONSE;
-        }
-
-        if (responseData.team == null || responseData.team.team == null) {
-            logError("Empty Response in " + SUCCESS_WITHOUT_TEAM_DETAILS.name());
-            return SUCCESS_WITHOUT_TEAM_DETAILS.withPayload(responseData);
-        } else if (responseData.team.team.location == null) {
-            logError("Empty Response in " + SUCCESS_WITHOUT_TEAM_LOCATION.name());
-            return SUCCESS_WITHOUT_TEAM_LOCATION.withPayload(responseData);
-        } else if (responseData.team.team.location.uuid == null) {
-            logError("Empty Response in " + SUCCESS_WITHOUT_TEAM_LOCATION_UUID.name());
-            return SUCCESS_WITHOUT_TEAM_LOCATION_UUID.withPayload(responseData);
-        } else if (responseData.team.team.uuid == null) {
-            logError("Empty Response in " + SUCCESS_WITHOUT_TEAM_UUID.name());
-            return SUCCESS_WITHOUT_TEAM_UUID.withPayload(responseData);
-        } else if (responseData.team.team.teamName == null) {
-            logError("Empty Response in " + SUCCESS_WITHOUT_TEAM_NAME.name());
-            return SUCCESS_WITHOUT_TEAM_NAME.withPayload(responseData);
-        }
-
-        if (responseData.user == null) {
-            logError("Empty Response in " + SUCCESS_WITHOUT_USER_DETAILS.name());
-            return SUCCESS_WITHOUT_USER_DETAILS.withPayload(responseData);
-        } else if (responseData.user.getUsername() == null) {
-            logError("Empty Response in " + SUCCESS_WITHOUT_USER_USERNAME.name());
-            return SUCCESS_WITHOUT_USER_USERNAME.withPayload(responseData);
-        } else if (responseData.user.getPreferredName() == null) {
-            logError("Empty Response in " + SUCCESS_WITHOUT_USER_PREFERREDNAME.name());
-            return SUCCESS_WITHOUT_USER_PREFERREDNAME.withPayload(responseData);
-        }
-
-        if (responseData.locations == null) {
-            logError("Empty Response in " + SUCCESS_WITHOUT_USER_LOCATION.name());
-            return SUCCESS_WITHOUT_USER_LOCATION.withPayload(responseData);
-        }
-//        if (responseData.time == null) {
-//            logError("Empty Response in " + SUCCESS_WITHOUT_TIME_DETAILS.name());
-//            return SUCCESS_WITHOUT_TIME_DETAILS.withPayload(responseData);
-//        } else if (responseData.time.getTime() == null) {
-//            logError("Empty Response in " + SUCCESS_WITHOUT_TIME.name());
-//            return SUCCESS_WITHOUT_TIME.withPayload(responseData);
-//        } else if (responseData.time.getTimeZone() == null) {
-//            logError("Empty Response in " + SUCCESS_WITHOUT_TIME_ZONE.name());
-//            return SUCCESS_WITHOUT_TIME_ZONE.withPayload(responseData);
-//        }
-
-        return SUCCESS.withPayload(responseData);
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -307,30 +171,12 @@ public class LoginActivity extends AppCompatActivity {
         if (BuildConfig.DEBUG) {
             if (getOpenSRPContext().userService().hasARegisteredUser()) {
                 userNameEditText.setText(context.allSharedPreferences().fetchRegisteredANM());
-                userNameEditText.setEnabled(false);
             }
         }
     }
 
     public static Context getOpenSRPContext() {
         return BidanApplication.getInstance().context();
-    }
-
-    public String getUserDefaultLocationId(String userInfo) {
-        Log.e(TAG, "getUserDefaultLocationId: "+ userInfo );
-        try {
-            JSONObject userLocationJSON = new JSONObject(userInfo);
-            return userLocationJSON
-                    .getJSONObject(AllConstantsINA.SyncFilters.FILTER_TEAM)
-                    .getJSONArray(AllConstantsINA.SyncFilters.FILTER_LOCATION_ID)
-                    .getJSONObject(0)
-                    .getString("name");
-
-        } catch (JSONException e) {
-            Log.v("Error : ", e.getMessage());
-        }
-
-        return null;
     }
 
     public static String switchLanguagePreference() {
@@ -349,10 +195,6 @@ public class LoginActivity extends AppCompatActivity {
 
         } else {
             allSharedPreferences.saveLanguagePreference(ENGLISH_LOCALE);
-//            Resources res = Context.getInstance().applicationContext().getResources();
-            // Change locale settings in the app.
-//            DisplayMetrics dm = res.getDisplayMetrics();
-//            android.content.res.Configuration conf = res.getConfiguration();
             conf.locale = new Locale(ENGLISH_LOCALE);
             res.updateConfiguration(conf, dm);
             return ENGLISH_LANGUAGE;
@@ -413,7 +255,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     public void login(final View view) {
-//        Log.e(TAG, "login: "+ getOpenSRPContext().userService().hasARegisteredUser() );
         login(view, !getOpenSRPContext().allSharedPreferences().fetchForceRemoteLogin());
     }
 
@@ -424,21 +265,47 @@ public class LoginActivity extends AppCompatActivity {
         final String userName = userNameEditText.getText().toString();
         final String password = passwordEditText.getText().toString();
 
-        Bugsnag.setUserName(userName);
 
-        Bugsnag.leaveBreadcrumb("userName: " + userName);
-        Bugsnag.leaveBreadcrumb("password: " + password);
 
         if (!TextUtils.isEmpty(userName) && !TextUtils.isEmpty(password)) {
-            if (localLogin) {
-                localLogin(view, userName, password);
+            if (context.allSharedPreferences().fetchRegisteredANM().equalsIgnoreCase(userNameEditText.getText().toString())) {
+                if (localLogin) {
+                    localLogin(view, userName, password);
+                } else {
+                    remoteLogin(view, userName, password);
+                }
             } else {
+                clearExistingData();
                 remoteLogin(view, userName, password);
             }
         } else {
             showErrorDialog(getResources().getString(R.string.unauthorized));
             view.setClickable(true);
         }
+    }
+
+    private void clearExistingData() {
+        BidanApplication.getInstance().getRepository().deleteRepository();
+        getSharedPreferences("preferences", android.content.Context.MODE_PRIVATE).edit().clear().apply();
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+        String currentUrlSetting = pref.getString("DRISHTI_BASE_URL", "-");
+        pref.edit().clear().apply();
+        pref.edit().putString("DRISHTI_BASE_URL", currentUrlSetting).apply();
+        AllSharedPreferences allSharedPreferences = new AllSharedPreferences(pref);
+        URL url = null;
+        try {
+            url = new URL(currentUrlSetting);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        String base = url.getProtocol() + "://" + url.getHost();
+        int port = url.getPort();
+
+        logInfo("Base URL: " + base);
+        logInfo("Port: " + port);
+        allSharedPreferences.saveHost(base);
+        allSharedPreferences.savePort(port);
     }
 
     private KeyStore.PrivateKeyEntry getUserKeyPair(KeyStore keyStore, final String username) throws Exception {
@@ -505,40 +372,32 @@ public class LoginActivity extends AppCompatActivity {
         try {
             KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
             keyStore.load(null);
-            if (keyStore == null) {
-                Bugsnag.leaveBreadcrumb("keystore null");
-            }
+
             KeyStore.PrivateKeyEntry privateKeyEntry = getUserKeyPair(keyStore, userName);
-            if (privateKeyEntry == null) {
-                Bugsnag.leaveBreadcrumb("privateKeyEntry null");
-            }
+
 
             String encryptedPassword = allSharedPreferences.
                     fetchEncryptedPassword(userName);
             String decryptedPassword = decryptString(privateKeyEntry, encryptedPassword);
-            if (!password.equals(decryptedPassword)) {
-                Bugsnag.leaveBreadcrumb("password not equal: " + password + " : " + decryptedPassword);
-            }
+
 
             String groupId = getGroupId(allSharedPreferences, userName, privateKeyEntry);
-            if (groupId == null) {
-                Bugsnag.leaveBreadcrumb("groupId null");
-            }
+
 
             boolean isValidGroupId = isValidGroupId(groupId);
-            Bugsnag.leaveBreadcrumb("isValidGroupId: " + isValidGroupId);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         boolean fetchForceRemoteLogin = allSharedPreferences.fetchForceRemoteLogin();
-        Bugsnag.leaveBreadcrumb("fetchForceRemoteLogin: " + fetchForceRemoteLogin);
+
 
         if (getOpenSRPContext().userService().isUserInValidGroup(userName, password)) {
             localLoginWith(userName, password);
 
         } else {
-            Bugsnag.notify(new Exception(getString(org.smartregister.R.string.login_failed_dialog_message)));
+
 //            showErrorDialog(getString(org.smartregister.R.string.login_failed_dialog_message));
 //            view.setClickable(true);
             remoteLogin(view, userName, password);
@@ -548,8 +407,6 @@ public class LoginActivity extends AppCompatActivity {
     private void remoteLogin(final View view, final String userName, final String password) {
         tryRemoteLogin(userName, password, new Listener<LoginResponse>() {
             public void onEvent(LoginResponse loginResponse) {
-//                ErrorReportingFacade.setUsername("", userName);
-//                FlurryAgent.setUserId(userName);
                 if (loginResponse == SUCCESS) {
                     remoteLoginWith(userName, password, loginResponse.payload());
                     getOpenSRPContext().allSharedPreferences().saveForceRemoteLogin(false);
@@ -572,16 +429,6 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
         });
-
-/*        tryGetUniqueId(userName, password, new Listener<ResponseStatus>() {
-            @Override
-            public void onEvent(ResponseStatus data) {
-                if (data == ResponseStatus.failure) {
-                    logError("failed to fetch unique id");
-                }
-                goToHome();
-            }
-        });*/
     }
 
     private void tryRemoteLogin(final String userName, final String password, final Listener<LoginResponse> afterLoginCheck) {
@@ -625,14 +472,14 @@ public class LoginActivity extends AppCompatActivity {
 
     private void localLoginWith(String userName, String password) {
         context.userService().localLogin(userName, password);
-//        LoginActivity.generator = new Generator(context, userName, password);
         goToHome();
         DrishtiSyncScheduler.startOnlyIfConnectedToNetwork(getApplicationContext());
     }
 
     private void hideKeyboard() {
         InputMethodManager inputManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-        inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), HIDE_NOT_ALWAYS);
+        if (getCurrentFocus() != null)
+            inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), HIDE_NOT_ALWAYS);
     }
 
     private void showErrorDialog(String message) {

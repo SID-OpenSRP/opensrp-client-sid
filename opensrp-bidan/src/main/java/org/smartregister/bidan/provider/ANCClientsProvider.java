@@ -2,7 +2,6 @@ package org.smartregister.bidan.provider;
 
 import android.app.Activity;
 import android.database.Cursor;
-import android.graphics.Color;
 import android.util.Log;
 import android.view.View;
 import android.widget.AbsListView;
@@ -13,6 +12,9 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.Days;
+import org.joda.time.Duration;
 import org.joda.time.LocalDate;
 import org.joda.time.Months;
 import org.joda.time.format.DateTimeFormat;
@@ -33,15 +35,13 @@ import org.smartregister.view.contract.SmartRegisterClient;
 
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static org.joda.time.LocalDateTime.parse;
-
-import org.joda.time.*;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 /**
  * Created by Dimas Ciputra on 2/16/15
@@ -137,8 +137,8 @@ public class ANCClientsProvider extends BaseClientsProvider {
         if(ancobject != null) {
             detailsRepository.updateDetails(ancobject);
 
-            Log.e(TAG, "getView: client : " + ancobject.getColumnmaps().toString());
-            Log.e(TAG, "getView: event : " + ancobject.getDetails().toString());
+//            Log.e(TAG, "getView: client : " + ancobject.getColumnmaps().toString());
+//            Log.e(TAG, "getView: event : " + ancobject.getDetails().toString());
 
             Map<String, String> details = detailsRepository.getAllDetailsForClient(pc.entityId());
             details.putAll(ancobject.getColumnmaps());
@@ -252,8 +252,8 @@ public class ANCClientsProvider extends BaseClientsProvider {
         String ageWeek = getAgeWeek(pc.getDetails().get("htp"));
 
         ((TextView) convertView.findViewById(R.id.unique_id)).setText(pc.getDetails().get(AllConstantsINA.CommonFormFields.UNIQUE_ID) != null ? pc.getDetails().get(AllConstantsINA.CommonFormFields.UNIQUE_ID) : "");
-//        ((TextView) convertView.findViewById(R.id.txt_usia_klinis)).setText(pc.getDetails().get("usiaKlinis") != null ? mContext.getString(R.string.usia) +" "+ pc.getDetails().get("usiaKlinis") + mContext.getString(R.string.str_weeks) : "-");
-        ((TextView) convertView.findViewById(R.id.txt_usia_klinis)).setText(ageWeek != "" ? mContext.getString(R.string.usia) +": "+ ageWeek + mContext.getString(R.string.str_weeks) : "-");
+        ((TextView) convertView.findViewById(R.id.txt_usia_klinis)).setText(pc.getDetails().get("usiaKlinis") != null ? mContext.getString(R.string.usia) +" "+ pc.getDetails().get("usiaKlinis") + mContext.getString(R.string.str_weeks) : "-");
+//        ((TextView) convertView.findViewById(R.id.txt_usia_klinis)).setText(ageWeek != "" ? mContext.getString(R.string.usia) +": "+ ageWeek + mContext.getString(R.string.str_weeks) : "-");
         ((TextView) convertView.findViewById(R.id.txt_htpt)).setText(pc.getDetails().get("htp") != null ? pc.getDetails().get("htp") : "-");
 
         TextView edd_due = (TextView) convertView.findViewById(R.id.txt_edd_due);
@@ -369,7 +369,7 @@ public class ANCClientsProvider extends BaseClientsProvider {
     //hasep: used for get week ages based on htp
     private String getAgeWeek(String htp){
         if(htp != null ) {
-            Log.e(TAG, "getAgeWeek: " + htp);
+//            Log.e(TAG, "getAgeWeek: " + htp);
 
             DateTimeFormatter datePattern = DateTimeFormat.forPattern("yyyy-MM-dd");
             DateTime HTP = datePattern.parseDateTime(htp);
@@ -384,7 +384,7 @@ public class ANCClientsProvider extends BaseClientsProvider {
 
     private String getNextMonth(String date){
         if(date != null && date != "-" ) {
-            Log.e(TAG, "getNextMonth: " + date);
+//            Log.e(TAG, "getNextMonth: " + date);
             DateTimeFormatter datePattern = DateTimeFormat.forPattern("yyyy-MM-dd");
             DateTime DATE = datePattern.parseDateTime(date);
             DateTime nextMonth = DATE.plusMonths(1);
@@ -404,7 +404,7 @@ public class ANCClientsProvider extends BaseClientsProvider {
         Matcher matcher = pattern.matcher(date);
 
         if(date != null && matcher.find()) {
-            Log.e(TAG, "getAlertStatus: " + date);
+//            Log.e(TAG, "getAlertStatus: " + date);
             DateTimeFormatter datePattern = DateTimeFormat.forPattern("yyyy-MM-dd");
             DateTime DATE = datePattern.parseDateTime(date);
             DateTime now = DateTime.now();

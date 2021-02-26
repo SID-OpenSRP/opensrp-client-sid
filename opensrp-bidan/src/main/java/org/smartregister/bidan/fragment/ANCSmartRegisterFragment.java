@@ -158,7 +158,7 @@ public class ANCSmartRegisterFragment extends BaseSmartRegisterFragment {
                     new CommonRepository(tableEcIbu, new String[]{"ec_ibu.is_closed", "ec_kartu_ibu.namalengkap", "ec_kartu_ibu.namaSuami"}));
             clientsView.setAdapter(clientAdapter);
 
-            setTablename("ec_ibu");
+            setTablename("ec_kartu_ibu");
             SmartRegisterQueryBuilder countQueryBuilder = new SmartRegisterQueryBuilder();
             countQueryBuilder.SelectInitiateMainTableCounts(tableEcIbu);
             countQueryBuilder.customJoin("LEFT JOIN ec_ibu on ec_kartu_ibu.id = ec_ibu.id");

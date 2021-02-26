@@ -742,16 +742,16 @@
         <span class="or-hint " data-itext-id="/Kartu_ibu/nomor_telpon_hp:hint" lang="en">Mother's
             contact number
         </span>
-        <input name="/Kartu_ibu/nomor_telpon_hp" data-constraint=".&gt;0 and .&lt;100000000000"
+        <input name="/Kartu_ibu/nomor_telpon_hp" data-constraint=".&gt;0 and .&lt;1000000000000"
             data-type-xml="string" type="text" />
         <span class="or-constraint-msg active"
             data-itext-id="/Kartu_ibu/nomor_telpon_hp:jr:constraintMsg" lang="Bahasa">Nomer teelpon
             tidak boleh
-            lebih dari 12 digit
+            lebih dari 13 digit
         </span>
         <span class="or-constraint-msg " data-itext-id="/Kartu_ibu/nomor_telpon_hp:jr:constraintMsg"
             lang="en">Contact number should be no
-            more than 12 digits
+            more than 13 digits
         </span>
     </label>
     <fieldset style="display:none;" id="or-preload-items">
